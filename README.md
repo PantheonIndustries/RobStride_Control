@@ -8,6 +8,8 @@
 
 High-performance motor control library for RobStride motors with implementations in Python, C++, Rust, and Arduino.
 
+Documentation from Seeed Studio: [https://wiki.seeedstudio.com/robstride_control/](https://wiki.seeedstudio.com/robstride_control/)
+
 ## Quick Start
 
 ```bash
