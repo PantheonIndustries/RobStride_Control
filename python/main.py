@@ -21,11 +21,16 @@ from mpl_toolkits.mplot3d import Axes3D
 #     )
 # ])
 
-evil_chain = Chain.from_urdf_file("leg.URDF")
+evil_chain = Chain.from_urdf_file("leg.URDF", active_links_mask=[True, True, True, False])
+
+
 
 ax = matplotlib.pyplot.figure().add_subplot(111, projection='3d')
 
-evil_chain.plot(evil_chain.inverse_kinematics([2, 2, 2]), ax)
+# ik units are in meters.
+ik_result = evil_chain.inverse_kinematics([0.1, 0, 0.1])
+print(ik_result)
+evil_chain.plot(ik_result, ax)
 matplotlib.pyplot.show()
 
 
