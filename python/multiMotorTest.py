@@ -5,7 +5,7 @@ while True:
         motor_id = input("what's the motor's ID? input 'y' when done. ")
         motor_id = int(motor_id)
         motor_ids.append(motor_id)
-    except:
+    except ValueError:
         if motor_id == "y":
             break
         print("thats not a integer")
@@ -30,9 +30,9 @@ while True:
         print(f"trying to go to {motor.target_position} rn")
         while True:
             try:
-                motor_angle = float(input("gimmie an angle in degrees "))
+                motor_angle = float(input(f"gimmie an angle in degrees for {motor.motor_id}"))
                 break
-            except:
+            except ValueError:
                 print("thats not a number probably")
         motor.set_angle(motor_angle)
     # motor.run_interactive

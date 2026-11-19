@@ -19,7 +19,7 @@ while True:
         try:
             motor_angle = float(input("gimmie an angle in degrees "))
             break
-        except:
+        except ValueError:
             print("thats not a number probably")
     motor.set_angle(motor_angle)
     # motor.run_interactive
