@@ -1,6 +1,10 @@
 from src.position_control import PositionControllerMIT
-
-motor_id = int(input("what's the motor's ID? "))
+while True:
+    try:
+        motor_id = int(input("what's the motor's ID? "))
+        break
+    except:
+        print("thats not a integer")
 motor = PositionControllerMIT(motor_id)
 
 if not motor.connect():
