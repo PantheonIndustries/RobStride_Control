@@ -13,7 +13,7 @@ for motor in motors:
         print(f"couldn't connect to motor {motor.motor_id}")
         exit()
 
-    motor.set_kp(30)# the default is 30 Nm/rad
+    motor.set_kp(35)# the default is 30 Nm/rad
 
 input("press enter to go to the first position")
 
