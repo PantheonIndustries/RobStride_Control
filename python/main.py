@@ -33,7 +33,7 @@ evil_chain = Chain.from_urdf_file(f"{os.path.dirname(os.path.realpath(__file__))
 ax = matplotlib.pyplot.figure().add_subplot(111, projection='3d')
 
 # ik units are in meters.
-ik_result1 = evil_chain.inverse_kinematics([0.0, 0, -0.19])
+ik_result1 = evil_chain.inverse_kinematics([0.001, 0, -0.19])
 print("first pose")
 print(ik_result1)
 evil_chain.plot(ik_result1, ax)
@@ -42,7 +42,7 @@ matplotlib.pyplot.show()
 input("press enter :) ")
 
 # ik units are in meters.
-ik_result2 = evil_chain.inverse_kinematics([0.1, 0, -0.1778-0.1778])
+ik_result2 = evil_chain.inverse_kinematics([0, 0, -0.1778-0.1778])
 print("end pose")
 print(ik_result2)
 evil_chain.plot(ik_result2, ax)
