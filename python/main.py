@@ -22,7 +22,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # ])
 
 # evil_chain = Chain.from_urdf_file("leg.URDF", active_links_mask=[True, True, True, True, False])
-evil_chain = Chain.from_urdf_file("leg2Motor.URDF", active_links_mask=[True, True, True, False])
+evil_chain = Chain.from_urdf_file("./leg2Motor.URDF", active_links_mask=[True, True, True, False])
 
 
 
