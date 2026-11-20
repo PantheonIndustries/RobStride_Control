@@ -1,8 +1,8 @@
 from src.position_control import PositionControllerMIT
 
-motor_ids = [1,2,127]
-pose_1 = [0,0,0]
-pose_2 = [20,20,20]
+motor_ids = [2,127]
+pose_1 = [0,0]
+pose_2 = [-20,90]
 
 motors = []
 for id in motor_ids:
