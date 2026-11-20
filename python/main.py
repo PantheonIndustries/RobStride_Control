@@ -57,6 +57,8 @@ input("press enter to go to the first position")
 for i in range(len(motors)):
     motors[i].set_angle(math.degrees(ik_result[i+1]))
 
+input("yeah ok :)")
+
 
 # # 创建控制器
 # controller = PositionControllerMIT(motor_id=11)
