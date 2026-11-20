@@ -47,6 +47,8 @@ class PositionControllerMIT:
         self.kp = 30.0  # 刚度 (Nm/rad)
         self.kd = 0.5   # 阻尼 (Nm/rad/s)
 
+        self.ff_torque = 0.0
+
     def _signal_handler(self, signum, frame):
         self.stop_and_exit()
 
@@ -106,7 +108,7 @@ class PositionControllerMIT:
                     self.kp,
                     self.kd,
                     0.0, # velocity_ff
-                    0.0  # torque_ff
+                    self.ff_torque  # torque_ff
                 )
                 print(f"🏠 初始目标已设为: 0.0°")
             
@@ -138,7 +140,7 @@ class PositionControllerMIT:
                         self.kp,
                         self.kd,
                         0.0, # velocity_ff
-                        0.0  # torque_ff
+                        self.ff_torque # torque_ff
                     )
                     
                     # 2. 读取状态帧 (只收)
@@ -177,6 +179,10 @@ class PositionControllerMIT:
             print(f" -> 阻尼(Kd)设定: {self.kd:.1f}")
         else:
             print("❌ Kd 范围必须在 0-5")
+
+    def set_torque(self, torque: float):
+        self.ff_torque = torque
+        print(f"ok so the next time you send a command it'll have a torque of {torque}")
 
     def stop_and_exit(self):
         print("\n🛑 正在停止...")
