@@ -6,6 +6,8 @@ from ikpy.link import OriginLink, URDFLink, Link
 import matplotlib.pyplot
 from mpl_toolkits.mplot3d import Axes3D
 
+import os
+
 # evil_chain = Chain(name='leg', links=[
 #     OriginLink(),
 #     URDFLink(
@@ -22,7 +24,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # ])
 
 # evil_chain = Chain.from_urdf_file("leg.URDF", active_links_mask=[True, True, True, True, False])
-evil_chain = Chain.from_urdf_file("./leg2Motor.URDF", active_links_mask=[True, True, True, False])
+evil_chain = Chain.from_urdf_file(f"{os.path.dirname(os.path.realpath(__file__))}/leg2Motor.URDF", active_links_mask=[True, True, True, False])
 
 
 
