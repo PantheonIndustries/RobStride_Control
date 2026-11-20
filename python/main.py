@@ -21,7 +21,8 @@ from mpl_toolkits.mplot3d import Axes3D
 #     )
 # ])
 
-evil_chain = Chain.from_urdf_file("leg.URDF", active_links_mask=[True, True, True, True, False])
+# evil_chain = Chain.from_urdf_file("leg.URDF", active_links_mask=[True, True, True, True, False])
+evil_chain = Chain.from_urdf_file("leg2Motor.URDF", active_links_mask=[True, True, True, False])
 
 
 
@@ -32,6 +33,25 @@ ik_result = evil_chain.inverse_kinematics([0.1, 0, 0.1])
 print(ik_result)
 evil_chain.plot(ik_result, ax)
 matplotlib.pyplot.show()
+
+motor_ids = [2,127]
+
+motors = []
+for id in motor_ids:
+    motors.append(PositionControllerMIT(id))
+
+for motor in motors:
+    if not motor.connect():
+        print(f"couldn't connect to motor {motor.motor_id}")
+        exit()
+
+    motor.set_kp(30)# the default is 30 Nm/rad
+    # motor.set_torque(3)
+
+input("press enter to go to the first position")
+
+for i in range(len(motors)):
+    motors[i].set_angle(ik_result[i+1])
 
 
 # # 创建控制器
