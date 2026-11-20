@@ -14,6 +14,7 @@ for motor in motors:
         exit()
 
     motor.set_kp(35)# the default is 30 Nm/rad
+    motor.set_torque(3)
 
 input("press enter to go to the first position")
 
