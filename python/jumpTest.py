@@ -1,7 +1,7 @@
 from src.position_control import PositionControllerMIT
 
 motor_ids = [2,127]
-pose_1 = [0,0]
+pose_1 = [0,30]
 pose_2 = [90,-20]
 
 motors = []
