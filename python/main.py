@@ -24,7 +24,7 @@ import os
 # ])
 
 # evil_chain = Chain.from_urdf_file("leg.URDF", active_links_mask=[True, True, True, True, False])
-evil_chain = Chain.from_urdf_file(f"{os.path.dirname(os.path.realpath(__file__))}/leg2Motor.URDF", active_links_mask=[True, True, True, False])
+evil_chain = Chain.from_urdf_file(f"{os.path.dirname(os.path.realpath(__file__))}/leg2Motor.urdf", active_links_mask=[True, True, True, False])
 
 
 
