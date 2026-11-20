@@ -1,3 +1,5 @@
+import math
+
 from src.position_control import PositionControllerMIT
 
 from ikpy.chain import Chain
@@ -53,7 +55,7 @@ for motor in motors:
 input("press enter to go to the first position")
 
 for i in range(len(motors)):
-    motors[i].set_angle(ik_result[i+1])
+    motors[i].set_angle(math.degrees(ik_result[i+1]))
 
 
 # # 创建控制器
