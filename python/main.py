@@ -33,9 +33,15 @@ evil_chain = Chain.from_urdf_file(f"{os.path.dirname(os.path.realpath(__file__))
 ax = matplotlib.pyplot.figure().add_subplot(111, projection='3d')
 
 # ik units are in meters.
-ik_result = evil_chain.inverse_kinematics([0.1, 0, 0.1])
-print(ik_result)
-evil_chain.plot(ik_result, ax)
+ik_result1 = evil_chain.inverse_kinematics([0.0, 0, -0.19])
+print(ik_result1)
+evil_chain.plot(ik_result1, ax)
+matplotlib.pyplot.show()
+
+# ik units are in meters.
+ik_result2 = evil_chain.inverse_kinematics([0.1, 0, -0.1778-0.1778])
+print(ik_result2)
+evil_chain.plot(ik_result2, ax)
 matplotlib.pyplot.show()
 
 motor_ids = [2,127]
@@ -55,7 +61,12 @@ for motor in motors:
 input("press enter to go to the first position")
 
 for i in range(len(motors)):
-    motors[i].set_angle(math.degrees(ik_result[i+1]))
+    motors[i].set_angle(math.degrees(ik_result1[i+1]))
+
+input("press enter to go to the second position")
+
+for i in range(len(motors)):
+    motors[i].set_angle(math.degrees(ik_result2[i+1]))
 
 input("yeah ok :)")
 
