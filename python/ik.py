@@ -1,13 +1,21 @@
 import math
 
+# convention
+# x = forward/back, y = sideways, z = up/down, all in inches
+# theta0 = tilt, theta1 = hip, theta2 = knee, all in degrees
+# neutral: theta0 = 0, theta1 and theta2 about 45, foot at (0, 0, 0)
+
 # slightly silly cordinate system
 PIVOT_Y = 8.586
 TOP_LINK = 6.142
 BOTTOM_LINK = 6.0
+HIP_OFFSET = 2.895
 
 # deadzones
 MIN_REACH = 3.375
 MAX_REACH = TOP_LINK + BOTTOM_LINK
+TILT_MIN = -20
+TILT_MAX = 90
 
 class Leg:
     def __init__(self, hip, knee):
@@ -42,6 +50,34 @@ class Leg:
         by = PIVOT_Y - TOP_LINK * math.cos(theta1)
         theta2 = math.atan2(tx - bx, by - ty)
         return math.degrees(theta1), math.degrees(theta2)
+
+    # accepts degrees, returns foot (x, y, z) in inches
+    def forward_3d(self, theta0, theta1, theta2):
+        bx, by, ax, ay = self.forward(theta1, theta2)
+        h = PIVOT_Y - ay
+
+        theta0 = math.radians(theta0)
+        x = ax
+        y = HIP_OFFSET * math.cos(theta0) + h * math.sin(theta0)
+        z = PIVOT_Y + HIP_OFFSET * math.sin(theta0) - h * math.cos(theta0)
+        return x, y - HIP_OFFSET, z
+
+    # accepts foot (x, y, z) in inches, returns (theta0, theta1, theta2) in degrees
+    def inverse_3d(self, x, y, z):
+        y = y + HIP_OFFSET
+
+        h = math.sqrt(y**2 + (PIVOT_Y - z)**2 - HIP_OFFSET**2)
+        theta0 = math.degrees(math.atan2(y, PIVOT_Y - z) - math.atan2(HIP_OFFSET, h))
+        if theta0 < TILT_MIN or theta0 > TILT_MAX:
+            print("can't go there")
+            return None
+
+        angles = self.inverse(x, PIVOT_Y - h)
+        if angles is None:
+            return None
+        
+        theta1, theta2 = angles
+        return theta0, theta1, theta2
 
     # TODO: send the angles to the motors
     def move_to(self, tx, ty):
