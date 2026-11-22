@@ -1,89 +1,45 @@
-import math
+import time
 
-from src.position_control import PositionControllerMIT
+from robstride_dynamics import RobstrideBus
+from motors import *
+from ik import Leg
 
-from ikpy.chain import Chain
-from ikpy.link import OriginLink, URDFLink, Link
+# foot (x, y) in inches, (0, 0) is the neutral foot spot, hip is at (0, 8.586)
+FOOT_POSITIONS = [
+    (0, 0), (0, -3.4), (0, 0),             # straight down, almost a straight leg
+    (8.3, 0), (-8.3, 0), (0, 0),           # far forward, far back
+    (0, 5), (0, 0),                        # straight up, knee almost folded
+    (-7, -1), (7, -1), (-7, -1), (7, -1), (0, 0),   # big side to side swings
+    (8, 2), (6, 5), (-5, 5), (-8, 2), (0, 0),       # over the top, front to back
+    (8, 2), (4, 14), (8, 2), (0, 0),       # up above the hip in front, hip near -88
+    (-8, 2), (-8, 11), (-8, 2), (0, 0),    # up above the hip behind, hip near 153
+]
+SPEED = 8   # foot speed, inches per second
 
-import matplotlib.pyplot
-from mpl_toolkits.mplot3d import Axes3D
+if __name__ == "__main__":
+    bus = RobstrideBus("can0", {})
+    bus.connect()
+    hip = Motor(bus, "hip", HIP_CAN_ID, HIP_BOOT_ENCODER, HIP_BOOT_IK_ANGLE, HIP_DIRECTION, HIP_MIN_IK_ANGLE, HIP_MAX_IK_ANGLE)
+    knee = Motor(bus, "knee", KNEE_CAN_ID, KNEE_BOOT_ENCODER, KNEE_BOOT_IK_ANGLE, KNEE_DIRECTION, KNEE_MIN_IK_ANGLE, KNEE_MAX_IK_ANGLE)
+    leg = Leg(hip, knee)
 
-import os
+    # hip hanging straight down, knee folded on its hard stop
+    leg.calibrate()
+    print("starts with foot at", round(leg.foot_x, 2), round(leg.foot_y, 2))
+    input("press enter to start")
+    leg.enable()
 
-# evil_chain = Chain(name='leg', links=[
-#     OriginLink(),
-#     URDFLink(
-#              name="hip",
-#              origin_translation=[0,0,-2.45],
-#              origin_orientation=[0,0,0],
-#              rotation=[0,1,0]),
-#     URDFLink(
-#             name="yeag",
-#             origin_translation=[0,0,-5.45],
-#             origin_orientation=[0,0,0],
-#             rotation=[0,1,0]
-#     )
-# ])
+    try:
+        # first move from the folded boot pose
+        leg.smooth_move_to(0, 0, speed=2)
+        time.sleep(0.5)
 
-# evil_chain = Chain.from_urdf_file("leg.URDF", active_links_mask=[True, True, True, True, False])
-evil_chain = Chain.from_urdf_file(f"{os.path.dirname(os.path.realpath(__file__))}/leg2Motor.urdf", active_links_mask=[True, True, True, False])
+        for tx, ty in FOOT_POSITIONS:
+            leg.smooth_move_to(tx, ty, speed=SPEED)
+            time.sleep(0.3)
 
-
-
-ax = matplotlib.pyplot.figure().add_subplot(111, projection='3d')
-
-# ik units are in meters.
-ik_result1 = evil_chain.inverse_kinematics([0.001, 0, -0.19])
-print("first pose")
-print(ik_result1)
-evil_chain.plot(ik_result1, ax)
-matplotlib.pyplot.show()
-
-input("press enter :) ")
-
-# ik units are in meters.
-ik_result2 = evil_chain.inverse_kinematics([0, 0, -0.1778-0.1778])
-print("end pose")
-print(ik_result2)
-evil_chain.plot(ik_result2, ax)
-matplotlib.pyplot.show()
-
-motor_ids = [2,127]
-
-motors = []
-for id in motor_ids:
-    motors.append(PositionControllerMIT(id))
-
-for motor in motors:
-    if not motor.connect():
-        print(f"couldn't connect to motor {motor.motor_id}")
-        exit()
-
-    motor.set_kp(30)# the default is 30 Nm/rad
-    # motor.set_torque(3)
-
-input("press enter to go to the first position")
-
-for i in range(len(motors)):
-    motors[i].set_angle(math.degrees(ik_result1[i+1]))
-
-input("press enter to go to the second position")
-
-for i in range(len(motors)):
-    motors[i].set_angle(math.degrees(ik_result2[i+1]))
-
-input("yeah ok :)")
-
-
-# # 创建控制器
-# controller = PositionControllerMIT(motor_id=11)
-
-# # 连接电机
-# controller.connect()
-
-# # 设置位置 (角度)
-# controller.set_angle(90.0)
-
-# # 调整控制参数
-# controller.set_kp(30.0)  # 位置增益
-# controller.set_kd(0.5)   # 阻尼增益
+            theta1, theta2 = leg.get_angles()
+            bx, by, ax, ay = leg.forward(theta1, theta2)
+            print("asked foot", (tx, ty), "at", (round(ax, 2), round(ay, 2)))
+    finally:
+        leg.disable()
