@@ -104,6 +104,19 @@ class Leg:
         knee = self.knee.get_ik_angle()
         return theta1, knee - theta1
 
+    # accepts degrees and the push the foot makes on the ground in newtons,
+    # returns (hip, knee) motor torques in Nm, knee motor turns by the bend so it's theta1 + theta2
+    def foot_force_to_torque(self, theta1, theta2, fx, fy):
+        theta1 = math.radians(theta1)
+        theta2 = math.radians(theta2)
+
+        top_link_m = TOP_LINK * 0.0254 # to meters from inches
+        bottom_link_m = BOTTOM_LINK * 0.0254
+
+        hip_torque = fx * (-top_link_m * math.cos(theta1) - bottom_link_m * math.cos(theta2)) + fy * (top_link_m * math.sin(theta1) - bottom_link_m * math.sin(theta2))
+        knee_torque = fx * bottom_link_m * math.cos(theta2) + fy * bottom_link_m * math.sin(theta2)
+        return hip_torque, knee_torque
+
     # position mode: accepts inches, returns the target (theta1, theta2) in degrees
     def move_to(self, tx, ty):
         angles = self.inverse(tx, ty)

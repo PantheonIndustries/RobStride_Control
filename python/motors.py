@@ -12,8 +12,13 @@ SAFETY_MARGIN = 5
 TORQUE_LIMIT = 5
 
 # MIT gains, motor units: kp in Nm/rad, kd in Nm per rad/s
-MIT_KP = 5
-MIT_KD = 0.5
+MIT_KP = 40
+MIT_KD = 1.5
+
+# motor's own current loop, stock is cur_kp 0.125 and cur_filter_gain 0.1
+# softer and more filtered to try to quiet the buzz, resets when the motor loses power
+CURRENT_KP = 0.06
+CURRENT_FILTER_GAIN = 0.05
 
 # position mode (CSP) top speed, degrees/s
 # CSP_SPEED_LIMIT = 360
@@ -76,6 +81,8 @@ class Motor:
     def enable(self):
         self.bus.write(self.name, ParameterType.MODE, 0)
         self.bus.write(self.name, ParameterType.TORQUE_LIMIT, TORQUE_LIMIT)
+        self.bus.write(self.name, ParameterType.CURRENT_KP, CURRENT_KP)
+        self.bus.write(self.name, ParameterType.CURRENT_FILTER_GAIN, CURRENT_FILTER_GAIN)
         self.bus.enable(self.name)
         # hold where it is right now, so it doesn't jump to an old target the moment it turns on
         self.ik_angle = self.get_ik_angle()
