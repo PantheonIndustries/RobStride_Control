@@ -79,6 +79,33 @@ class Leg:
         theta1, theta2 = angles
         return theta0, theta1, theta2
 
+    # accepts degrees and the foot push (fx, fy) in newtons, returns (hip, knee) torque in Nm
+    def foot_force_to_torque(self, theta1, theta2, fx, fy):
+        theta1 = math.radians(theta1)
+        theta2 = math.radians(theta2)
+
+        top_link_m = TOP_LINK * 0.0254 # to meters from inches
+        bottom_link_m = BOTTOM_LINK * 0.0254
+
+        hip_torque = top_link_m * (-math.cos(theta1) * fx + math.sin(theta1) * fy)
+        knee_torque = bottom_link_m * (math.cos(theta2) * fx + math.sin(theta2) * fy)
+        return hip_torque, knee_torque
+
+    # accepts degrees and the foot push (fx, fy, fz) in newtons, returns (tilt, hip, knee) torque in Nm
+    def foot_force_to_torque_3d(self, theta0, theta1, theta2, fx, fy, fz):
+        bx, by, ax, ay = self.forward(theta1, theta2)
+        h = PIVOT_Y - ay
+
+        h_m = h * 0.0254 # to meters from inches
+        offset_m = HIP_OFFSET * 0.0254
+
+        theta0 = math.radians(theta0)
+        tilt_torque = fy * (h_m * math.cos(theta0) - offset_m * math.sin(theta0)) + fz * (h_m * math.sin(theta0) + offset_m * math.cos(theta0))
+
+        fy_in_plane = fz * math.cos(theta0) - fy * math.sin(theta0)
+        hip_torque, knee_torque = self.foot_force_to_torque(theta1, theta2, fx, fy_in_plane)
+        return tilt_torque, hip_torque, knee_torque
+
     # TODO: send the angles to the motors
     def move_to(self, tx, ty):
         pass
