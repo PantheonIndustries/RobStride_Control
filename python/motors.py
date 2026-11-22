@@ -73,9 +73,13 @@ class Motor:
             self.bus.write(self.name, ParameterType.MODE, 0)
             self.bus.enable(self.name)
         else:
+            # target = where it is right now, so it doesn't jump to an old target the moment it turns on
+            here = math.radians(self.read_encoder())
             self.bus.write(self.name, ParameterType.MODE, 5)
+            self.bus.write(self.name, ParameterType.POSITION_TARGET, here)
             self.bus.enable(self.name)
             self.bus.write(self.name, ParameterType.VELOCITY_LIMIT, math.radians(CSP_SPEED_LIMIT))
+            self.bus.write(self.name, ParameterType.POSITION_TARGET, here)
 
     def disable(self):
         self.bus.disable(self.name)
@@ -86,7 +90,11 @@ class Motor:
 
     # position mode: sends the target, returns where the joint is right now
     def move_to_ik_angle(self, target_ik_angle):
-        target_ik_angle = min(max(target_ik_angle, self.safe_min_ik_angle), self.safe_max_ik_angle)
+        # clamp to the safe range, but if the joint is already past it (knee on its hard stop at boot)
+        # let it stay where it is instead of snapping inside all at once
+        low = min(self.safe_min_ik_angle, self.ik_angle)
+        high = max(self.safe_max_ik_angle, self.ik_angle)
+        target_ik_angle = min(max(target_ik_angle, low), high)
         encoder = self.ik_angle_to_encoder(target_ik_angle)
 
         # same as bus.write, but keeps the motor's reply instead of throwing it away
