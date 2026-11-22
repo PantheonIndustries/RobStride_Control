@@ -13,10 +13,13 @@ BOTTOM_LINK = 6.0
 HIP_OFFSET = 2.895
 
 # deadzones
-MIN_REACH = 2.5
+MIN_REACH = 2.3
 MAX_REACH = TOP_LINK + BOTTOM_LINK
 TILT_MIN = -20
 TILT_MAX = 90
+
+# seconds between commands sent to the motors, 0.01 = 100 per second
+STEP_TIME = 0.01
 
 class Leg:
     def __init__(self, hip, knee):
@@ -115,12 +118,12 @@ class Leg:
         return theta1, theta2
 
     # position mode: straight line (tx, ty) at speed inches/s
-    def smooth_move_to(self, tx, ty, speed=5, step_time=0.01):
+    def smooth_move_to(self, tx, ty, speed=5):
         start_x = self.foot_x
         start_y = self.foot_y
 
         distance = math.sqrt((tx - start_x)**2 + (ty - start_y)**2)
-        steps = max(1, int(distance / speed / step_time))
+        steps = max(1, int(distance / speed / STEP_TIME))
 
         next_tick = time.time()
         for i in range(1, steps + 1):
@@ -130,7 +133,7 @@ class Leg:
             if self.move_to(x, y) is None:
                 return None
 
-            next_tick = next_tick + step_time
+            next_tick = next_tick + STEP_TIME
             time.sleep(max(0, next_tick - time.time()))
 
         return tx, ty

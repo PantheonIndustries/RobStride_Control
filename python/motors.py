@@ -11,15 +11,20 @@ SAFETY_MARGIN = 5
 # Nm
 TORQUE_LIMIT = 5
 
+# MIT gains, motor units: kp in Nm/rad, kd in Nm per rad/s
+MIT_KP = 5
+MIT_KD = 0.5
+
 # position mode (CSP) top speed, degrees/s
-CSP_SPEED_LIMIT = 360
+# CSP_SPEED_LIMIT = 360
 
 KNEE_CAN_ID = 1
 KNEE_BOOT_ENCODER = math.degrees(0.029)
 KNEE_BOOT_IK_ANGLE = 154.55
 KNEE_DIRECTION = -1
 KNEE_MIN_IK_ANGLE = -135.45   
-KNEE_MAX_IK_ANGLE = 154.55
+# hard stop is at 154.55, this puts the safe max 2 past it so it can press into the stop
+KNEE_MAX_IK_ANGLE = 154.55 + SAFETY_MARGIN + 2
 
 HIP_CAN_ID = 2
 HIP_BOOT_ENCODER = math.degrees(-0.7106)
@@ -68,18 +73,13 @@ class Motor:
         encoder = self.read_encoder()
         self.ik_angle = self.encoder_to_ik_angle(encoder)
 
-    def enable(self, mit=False):
-        if mit:
-            self.bus.write(self.name, ParameterType.MODE, 0)
-            self.bus.enable(self.name)
-        else:
-            # target = where it is right now, so it doesn't jump to an old target the moment it turns on
-            here = math.radians(self.read_encoder())
-            self.bus.write(self.name, ParameterType.MODE, 5)
-            self.bus.write(self.name, ParameterType.POSITION_TARGET, here)
-            self.bus.enable(self.name)
-            self.bus.write(self.name, ParameterType.VELOCITY_LIMIT, math.radians(CSP_SPEED_LIMIT))
-            self.bus.write(self.name, ParameterType.POSITION_TARGET, here)
+    def enable(self):
+        self.bus.write(self.name, ParameterType.MODE, 0)
+        self.bus.write(self.name, ParameterType.TORQUE_LIMIT, TORQUE_LIMIT)
+        self.bus.enable(self.name)
+        # hold where it is right now, so it doesn't jump to an old target the moment it turns on
+        self.ik_angle = self.get_ik_angle()
+        self.move_to_ik_angle(self.ik_angle)
 
     def disable(self):
         self.bus.disable(self.name)
@@ -88,8 +88,8 @@ class Motor:
         self.ik_angle = self.encoder_to_ik_angle(self.read_encoder())
         return self.ik_angle
 
-    # position mode: sends the target, returns where the joint is right now
-    def move_to_ik_angle(self, target_ik_angle):
+    # MIT mode: spring toward the target with kp, kd, plus torque in Nm, returns where the joint is right now
+    def move_to_ik_angle(self, target_ik_angle, kp=MIT_KP, kd=MIT_KD, torque=0):
         # clamp to the safe range, but if the joint is already past it (knee on its hard stop at boot)
         # let it stay where it is instead of snapping inside all at once
         low = min(self.safe_min_ik_angle, self.ik_angle)
@@ -97,10 +97,32 @@ class Motor:
         target_ik_angle = min(max(target_ik_angle, low), high)
         encoder = self.ik_angle_to_encoder(target_ik_angle)
 
-        # same as bus.write, but keeps the motor's reply instead of throwing it away
-        data = struct.pack("<HHf", ParameterType.POSITION_TARGET[0], 0, math.radians(encoder))
-        self.bus.transmit(CommunicationType.WRITE_PARAMETER, self.bus.host_id, self.can_id, data)
-        position, velocity, torque, temperature = self.bus.receive_status_frame(self.name)
+        self.bus.write_operation_frame(self.name, math.radians(encoder), kp, kd, 0, torque * self.direction)
+        position, velocity, measured_torque, temperature = self.bus.read_operation_frame(self.name)
 
         self.ik_angle = self.encoder_to_ik_angle(math.degrees(position))
         return self.ik_angle
+
+    # CSP position mode, not used
+    # def enable_csp(self):
+    #     # target = where it is right now, so it doesn't jump to an old target the moment it turns on
+    #     here = math.radians(self.read_encoder())
+    #     self.bus.write(self.name, ParameterType.MODE, 5)
+    #     self.bus.write(self.name, ParameterType.POSITION_TARGET, here)
+    #     self.bus.enable(self.name)
+    #     self.bus.write(self.name, ParameterType.VELOCITY_LIMIT, math.radians(CSP_SPEED_LIMIT))
+    #     self.bus.write(self.name, ParameterType.POSITION_TARGET, here)
+    #
+    # def csp_move_to_ik_angle(self, target_ik_angle):
+    #     low = min(self.safe_min_ik_angle, self.ik_angle)
+    #     high = max(self.safe_max_ik_angle, self.ik_angle)
+    #     target_ik_angle = min(max(target_ik_angle, low), high)
+    #     encoder = self.ik_angle_to_encoder(target_ik_angle)
+    #
+    #     # same as bus.write, but keeps the motor's reply instead of throwing it away
+    #     data = struct.pack("<HHf", ParameterType.POSITION_TARGET[0], 0, math.radians(encoder))
+    #     self.bus.transmit(CommunicationType.WRITE_PARAMETER, self.bus.host_id, self.can_id, data)
+    #     position, velocity, torque, temperature = self.bus.receive_status_frame(self.name)
+    #
+    #     self.ik_angle = self.encoder_to_ik_angle(math.degrees(position))
+    #     return self.ik_angle

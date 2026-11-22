@@ -6,16 +6,13 @@ from motors import *
 from ik import Leg
 
 # foot (x, y) in inches, (0, 0) is the neutral foot spot, hip is at (0, 8.586)
+# small moves around neutral, to see how MIT holds and lags
 FOOT_POSITIONS = [
-    (0, 0), (0, -3.4), (0, 0),             # straight down, almost a straight leg
-    (8.3, 0), (-8.3, 0), (0, 0),           # far forward, far back
-    (0, 5), (0, 0),                        # straight up, knee almost folded
-    (-7, -1), (7, -1), (-7, -1), (7, -1), (0, 0),   # big side to side swings
-    (8, 2), (6, 5), (-5, 5), (-8, 2), (0, 0),       # over the top, front to back
-    (8, 2), (4, 14), (8, 2), (0, 0),       # up above the hip in front, hip near -88
-    (-8, 2), (-8, 11), (-8, 2), (0, 0),    # up above the hip behind, hip near 153
+    (0, 0), (0, -2), (0, 0),               # down and back
+    (3, 0), (-3, 0), (0, 0),               # forward, back
+    (0, 2), (0, 0),                        # up
 ]
-SPEED = 8   # foot speed, inches per second
+SPEED = 3   # foot speed, inches per second
 
 if __name__ == "__main__":
     bus = RobstrideBus("can0", {})
@@ -37,10 +34,21 @@ if __name__ == "__main__":
 
         for tx, ty in FOOT_POSITIONS:
             leg.smooth_move_to(tx, ty, speed=SPEED)
-            time.sleep(0.3)
+            time.sleep(0.5)
 
             theta1, theta2 = leg.get_angles()
             bx, by, ax, ay = leg.forward(theta1, theta2)
             print("asked foot", (tx, ty), "at", (round(ax, 2), round(ay, 2)))
     finally:
         leg.disable()
+
+# full limits tour, CSP ran it at SPEED 8
+# FOOT_POSITIONS = [
+#     (0, 0), (0, -3.4), (0, 0),             # straight down, almost a straight leg
+#     (8.3, 0), (-8.3, 0), (0, 0),           # far forward, far back
+#     (0, 5), (0, 0),                        # straight up, knee almost folded
+#     (-7, -1), (7, -1), (-7, -1), (7, -1), (0, 0),   # big side to side swings
+#     (8, 2), (6, 5), (-5, 5), (-8, 2), (0, 0),       # over the top, front to back
+#     (8, 2), (4, 14), (8, 2), (0, 0),       # up above the hip in front, hip near -88
+#     (-8, 2), (-8, 11), (-8, 2), (0, 0),    # up above the hip behind, hip near 153
+# ]
