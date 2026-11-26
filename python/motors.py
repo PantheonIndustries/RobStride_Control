@@ -1,5 +1,6 @@
 import math
 import struct
+import time
 
 from robstride_dynamics import RobstrideBus, ParameterType, CommunicationType
 from robstride_dynamics import Motor as BusMotor
@@ -9,22 +10,20 @@ BAND = 360 / 7.75
 SAFETY_MARGIN = 5
 
 # Nm
-TORQUE_LIMIT = 5
+TORQUE_LIMIT = 10
 
 # MIT gains, motor units: kp in Nm/rad, kd in Nm per rad/s
 MIT_KP = 40
 MIT_KD = 1.5
 
-# motor's own current loop, stock is cur_kp 0.125 and cur_filter_gain 0.1
-# softer and more filtered to try to quiet the buzz, resets when the motor loses power
-CURRENT_KP = 0.06
-CURRENT_FILTER_GAIN = 0.05
+CURRENT_KP = 0.125
+CURRENT_FILTER_GAIN = 0.1
 
 # position mode (CSP) top speed, degrees/s
 # CSP_SPEED_LIMIT = 360
 
 KNEE_CAN_ID = 1
-KNEE_BOOT_ENCODER = math.degrees(0.029)
+KNEE_BOOT_ENCODER = -12.56    # after tensioning the belt more
 KNEE_BOOT_IK_ANGLE = 154.55
 KNEE_DIRECTION = -1
 KNEE_MIN_IK_ANGLE = -135.45   
@@ -32,7 +31,7 @@ KNEE_MIN_IK_ANGLE = -135.45
 KNEE_MAX_IK_ANGLE = 154.55 + SAFETY_MARGIN + 2
 
 HIP_CAN_ID = 2
-HIP_BOOT_ENCODER = math.degrees(-0.7106)
+HIP_BOOT_ENCODER = -20.654
 HIP_BOOT_IK_ANGLE = 0
 HIP_DIRECTION = 1
 HIP_MIN_IK_ANGLE = -97
@@ -54,6 +53,13 @@ class Motor:
 
         # last known IK angle of this joint
         self.ik_angle = None
+
+        # every command sent and what the motor answered, main.py writes it to a file
+        self.log = []
+        # label for the log rows, main.py sets it ("crouch", "push", ...)
+        self.phase = ""
+        # also log current and supply voltage, each one is an extra trip on the bus so main.py turns it off for the push
+        self.log_current = True
 
         bus.motors[name] = BusMotor(can_id, model)
 
@@ -108,6 +114,17 @@ class Motor:
         position, velocity, measured_torque, temperature = self.bus.read_operation_frame(self.name)
 
         self.ik_angle = self.encoder_to_ik_angle(math.degrees(position))
+
+        current = 0
+        volts = 0
+        if self.log_current:
+            current = self.bus.read(self.name, ParameterType.IQ_FILTERED) * self.direction
+            volts = self.bus.read(self.name, ParameterType.VBUS)
+
+        # time, phase, what was asked, then what the motor says: IK angle, IK deg/s, torque in IK direction,
+        # current in amps (0 when not read), supply volts (0 when not read)
+        self.log.append((time.time(), self.phase, target_ik_angle, kp, kd, torque,
+                         self.ik_angle, math.degrees(velocity) * self.direction, measured_torque * self.direction, current, volts))
         return self.ik_angle
 
     # CSP position mode, not used
